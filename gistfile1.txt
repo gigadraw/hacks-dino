@@ -45,7 +45,10 @@
     <button onclick="Runner.instance_.playingIntro = true">🧊 Đứng im</button>
     <button onclick="Runner.instance_.playingIntro = false">🏃 Tiếp tục chạy</button>
     <button onclick="activateFireworkJump()">🎇 Bật Nhảy Pháo Hoa</button>
+    <button onclick="Runner.instance_.tRex.config.WIDTH = 88">🦖 Khủng long có ny</button>
     <button onclick="randomBackgroundColor()">🎨 Đổi nền màu ngẫu nhiên</button>
+    <button onclick="togglePlatformer()">🕹️ Platformer Mode =))</button>
+
   `;
   document.body.appendChild(menu);
 
@@ -93,5 +96,27 @@
   };
   window.randomBackgroundColor = function () {
     document.body.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+  };
+  window.togglePlatformer = function () {
+    const tRex = Runner.instance_.tRex;
+
+    if (!platformerActive) {
+      tRex.__x = tRex.xPos;
+      platformerActive = true;
+
+      document.addEventListener("keydown", e => keys[e.key] = true);
+      document.addEventListener("keyup", e => keys[e.key] = false);
+
+      tRex.__originalUpdate = tRex.update;
+      tRex.update = function (deltaTime) {
+        if (keys["ArrowLeft"]) this.__x -= 8;
+        if (keys["ArrowRight"]) this.__x += 8;
+        this.xPos = this.__x;
+        this.__originalUpdate.call(this, deltaTime);
+      };
+    } else {
+      platformerActive = false;
+      Runner.instance_.tRex.update = Runner.instance_.tRex.__originalUpdate;
+    }
   };
 })();
