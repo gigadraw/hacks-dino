@@ -45,7 +45,7 @@
     <button onclick="Runner.instance_.playingIntro = true">🧊 Đứng im</button>
     <button onclick="Runner.instance_.playingIntro = false">🏃 Tiếp tục chạy</button>
     <button onclick="activateFireworkJump()">🎇 Bật Nhảy Pháo Hoa</button>
- 
+    <button onclick="randomBackgroundColor()">🎨 Đổi nền màu ngẫu nhiên</button>
   `;
   document.body.appendChild(menu);
 
@@ -90,5 +90,8 @@
         }
       });
     }
+  };
+  window.randomBackgroundColor = function () {
+    document.body.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
   };
 })();
