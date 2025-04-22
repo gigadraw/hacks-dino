@@ -47,14 +47,11 @@
     <button onclick="activateFireworkJump()">🎇 Bật Nhảy Pháo Hoa</button>
     <button onclick="Runner.instance_.tRex.config.WIDTH = 88">🦖 Khủng long có ny</button>
     <button onclick="randomBackgroundColor()">🎨 Đổi nền màu ngẫu nhiên</button>
-    <button onclick="togglePlatformer()">🕹️ Platformer Mode =))</button>
-
+    <button onclick="toggleAutoJump()">🕹️ Bật Nhảy Tự Động</button>
   `;
   document.body.appendChild(menu);
 
-  let isDragging = false,
-    offsetX = 0,
-    offsetY = 0;
+  let isDragging = false, offsetX = 0, offsetY = 0;
   menu.addEventListener("mousedown", function (e) {
     isDragging = true;
     offsetX = e.clientX - menu.offsetLeft;
@@ -73,50 +70,55 @@
 
   window.autoJumpID = 0;
   window.autoJump = function () {
-    if (autoJumpID) clearInterval(autoJumpID);
-    autoJumpID = setInterval(() => {
-      const tRex = Runner.instance_.tRex;
-      const obs = Runner.instance_.horizon.obstacles;
-      if (obs.length > 0 && obs[0].x < 120 && tRex.y === 0) {
-        tRex.startJump(1);
-      }
-    }, 10);
+    const jumpSpeed = 50;
+    const distBeforeJump = 120;
+    const instance = window.Runner.instance_;
+    const tRex = instance.tRex;
+    const tRexPos = tRex.xPos;
+    const obstacles = instance.horizon.obstacles;
+
+    // Check if the T-Rex is in the air (already jumped)
+    if (tRex.jumping || tRex.ducking) {
+      requestAnimationFrame(autoJump);
+      return;
+    }
+
+    // Find the next obstacle ahead of the T-Rex
+    const nextObstacle = obstacles.find(o => o.xPos > tRexPos);
+
+    if (nextObstacle && (nextObstacle.xPos - tRexPos) <= distBeforeJump) {
+      // Start the jump if the obstacle is within the jump distance
+      tRex.startJump(jumpSpeed);
+    }
+
+    requestAnimationFrame(autoJump);
   };
+
   window.activateFireworkJump = function () {
     const trex = Runner.instance_.tRex;
     if (!trex.__originalJump) {
       trex.__originalJump = trex.startJump;
       trex.startJump = new Proxy(trex.__originalJump, {
         apply(target, thisArg, args) {
-          document.body.style.background = `hsl(${Math.random()*360}, 100%, 10%)`;
+          document.body.style.background = `hsl(${Math.random() * 360}, 100%, 10%)`;
           return Reflect.apply(target, thisArg, args);
         }
       });
     }
   };
+
   window.randomBackgroundColor = function () {
     document.body.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
   };
-  window.togglePlatformer = function () {
-    const tRex = Runner.instance_.tRex;
 
-    if (!platformerActive) {
-      tRex.__x = tRex.xPos;
-      platformerActive = true;
-
-      document.addEventListener("keydown", e => keys[e.key] = true);
-      document.addEventListener("keyup", e => keys[e.key] = false);
-
-      tRex.__originalUpdate = tRex.update;
-      tRex.update = function (deltaTime) {
-        if (keys["ArrowLeft"]) this.__x -= 8;
-        if (keys["ArrowRight"]) this.__x += 8;
-        this.xPos = this.__x;
-        this.__originalUpdate.call(this, deltaTime);
-      };
+  window.toggleAutoJump = function () {
+    if (autoJumpID) {
+      clearInterval(autoJumpID);
+      autoJumpID = 0;
+      console.log("🛑 Auto Jump: OFF");
     } else {
-      platformerActive = false;
-      Runner.instance_.tRex.update = Runner.instance_.tRex.__originalUpdate;
+      autoJump();
+      console.log("✅ Auto Jump: ON");
     }
   };
 })();
