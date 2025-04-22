@@ -14,6 +14,7 @@
       box-shadow: 0 0 10px #0f0;
       cursor: move;
       user-select: none;
+      display: none; /* Hidden by default */
     }
     #hackMenu button {
       display: block;
@@ -28,6 +29,20 @@
     #hackMenu button:hover {
       background: #0f0;
       color: #000;
+    }
+    #hackIcon {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #0f0;
+      color: black;
+      padding: 15px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 24px;
+      font-family: monospace;
+      z-index: 10000;
+      box-shadow: 0 0 10px #0f0;
     }
   `;
   document.head.appendChild(style);
@@ -51,6 +66,12 @@
   `;
   document.body.appendChild(menu);
 
+  // Create the hack icon
+  const icon = document.createElement("div");
+  icon.id = "hackIcon";
+  icon.innerHTML = "⚙️"; // Gear icon for the hack menu
+  document.body.appendChild(icon);
+
   let isDragging = false, offsetX = 0, offsetY = 0;
   menu.addEventListener("mousedown", function (e) {
     isDragging = true;
@@ -66,6 +87,12 @@
   });
   document.addEventListener("mouseup", function () {
     isDragging = false;
+  });
+
+  // Toggle the visibility of the hack menu
+  icon.addEventListener("click", function () {
+    const isMenuVisible = menu.style.display === "block";
+    menu.style.display = isMenuVisible ? "none" : "block";
   });
 
   window.autoJumpID = 0;
