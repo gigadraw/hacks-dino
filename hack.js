@@ -63,8 +63,7 @@
     <button onclick="Runner.instance_.tRex.config.WIDTH = 88">🦖 Khủng long có ny</button>
     <button onclick="randomBackgroundColor()">🎨 Đổi nền màu ngẫu nhiên</button>
     <button onclick="toggleAutoJump()">🕹️ Bật Nhảy Tự Động</button>
-    <button onclick="window.updateBullets()">🔫 Súng F</button>
-    <button onclick="toggleFlyHack()">🦋 Bay bằng WASD</button>
+    <button onclick="fireBullet()">🔫 Súng F</button>
     <input type="number" id="pointInput" placeholder="Số điểm" />
     <button onclick="addPoints()">➕ Thêm điểm</button>
   `;
@@ -93,11 +92,11 @@
   });
 
   icon.addEventListener("click", function () {
-    const isMenuVisible = menu.style.display === "block";
-    menu.style.display = isMenuVisible ? "none" : "block";
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
   });
 
-  window.autoJumpID = 0;
+  // ====== Auto Jump ======
+  let autoJumpID = 0;
   window.autoJump = function () {
     const jumpSpeed = 50;
     const distBeforeJump = 120;
@@ -112,7 +111,6 @@
     }
 
     const nextObstacle = obstacles.find(o => o.xPos > tRexPos);
-
     if (nextObstacle && (nextObstacle.xPos - tRexPos) <= distBeforeJump) {
       tRex.startJump(jumpSpeed);
     }
@@ -120,6 +118,16 @@
     requestAnimationFrame(autoJump);
   };
 
+  window.toggleAutoJump = function () {
+    if (autoJumpID) {
+      clearInterval(autoJumpID);
+      autoJumpID = 0;
+    } else {
+      autoJump();
+    }
+  };
+
+  // ====== Pháo Hoa ======
   window.activateFireworkJump = function () {
     const trex = Runner.instance_.tRex;
     if (!trex.__originalJump) {
@@ -137,80 +145,62 @@
     document.body.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
   };
 
-  window.toggleAutoJump = function () {
-    if (autoJumpID) {
-      clearInterval(autoJumpID);
-      autoJumpID = 0;
-      console.log("🛑 Auto Jump: OFF");
-    } else {
-      autoJump();
-      console.log("✅ Auto Jump: ON");
-    }
-  };
-
-  let flyEnabled = false;
-  let keyState = { w: false, s: false, a: false, d: false };
-  let flyLoopID = null;
-
-  const tRex = Runner.instance_.tRex;
-  const gravityBackup = tRex.config.GRAVITY;
-
-  function flyLoop() {
-    if (!flyEnabled) return;
-    if (keyState.w) tRex.yPos -= 5;
-    if (keyState.s) tRex.yPos += 5;
-    if (keyState.a) tRex.xPos -= 5;
-    if (keyState.d) tRex.xPos += 5;
-    tRex.update(0);
-    flyLoopID = requestAnimationFrame(flyLoop);
-  }
-
-  function toggleFlyHack() {
-    flyEnabled = !flyEnabled;
-
-    if (flyEnabled) {
-      tRex.config.GRAVITY = 0;
-      document.addEventListener("keydown", keyHandler);
-      document.addEventListener("keyup", keyUpHandler);
-      document.addEventListener("keydown", preventJump);
-      flyLoop();
-    } else {
-      tRex.config.GRAVITY = gravityBackup;
-      cancelAnimationFrame(flyLoopID);
-      document.removeEventListener("keydown", keyHandler);
-      document.removeEventListener("keyup", keyUpHandler);
-      document.removeEventListener("keydown", preventJump);
-      keyState = { w: false, s: false, a: false, d: false };
-    }
-  }
-
-  function keyHandler(e) {
-    const key = e.key.toLowerCase();
-    if (key in keyState) {
-      keyState[key] = true;
-    }
-  }
-
-  function keyUpHandler(e) {
-    const key = e.key.toLowerCase();
-    if (key in keyState) {
-      keyState[key] = false;
-    }
-  }
-
-  function preventJump(e) {
-    if (e.code === "Space") {
-      e.preventDefault();
-    }
-  }
-
   window.addPoints = function () {
     const points = parseInt(document.getElementById("pointInput").value, 10);
     if (!isNaN(points) && points > 0) {
       Runner.instance_.distanceRan += points;
-      console.log(`✅ Added ${points} points!`);
-    } else {
-      console.log("❌ Invalid input");
     }
   };
+
+  // ====== SÚNG F GỐC ======
+  const bullets = [];
+
+  function fireBullet() {
+    const rex = Runner.instance_.tRex;
+    const bullet = {
+      x: rex.xPos + 44,
+      y: rex.yPos + 20,
+      width: 10,
+      height: 5,
+      speed: 15,
+      el: document.createElement("div")
+    };
+    bullet.el.style.position = "absolute";
+    bullet.el.style.width = bullet.width + "px";
+    bullet.el.style.height = bullet.height + "px";
+    bullet.el.style.background = "red";
+    bullet.el.style.left = bullet.x + "px";
+    bullet.el.style.top = bullet.y + "px";
+    document.body.appendChild(bullet.el);
+    bullets.push(bullet);
+  }
+
+  function moveBullets() {
+    const obstacles = Runner.instance_.horizon.obstacles;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.x += b.speed;
+      b.el.style.left = b.x + "px";
+      if (b.x > innerWidth) {
+        b.el.remove();
+        bullets.splice(i, 1);
+        continue;
+      }
+      for (let j = 0; j < obstacles.length; j++) {
+        const o = obstacles[j];
+        if (b.x + b.width > o.xPos && b.x < o.xPos + o.width) {
+          obstacles.splice(j, 1);
+          b.el.remove();
+          bullets.splice(i, 1);
+          break;
+        }
+      }
+    }
+    requestAnimationFrame(moveBullets);
+  }
+  moveBullets();
+
+  document.addEventListener("keydown", e => {
+    if (e.key.toLowerCase() === "f") fireBullet();
+  });
 })();
