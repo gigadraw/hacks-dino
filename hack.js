@@ -167,6 +167,7 @@
     document.body.appendChild(bullet.el);
     bullets.push(bullet);
   }
+  window.fireBullet = fireBullet;
 
   function moveBullets() {
     const obstacles = Runner.instance_.horizon.obstacles;
