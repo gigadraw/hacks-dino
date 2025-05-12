@@ -30,6 +30,15 @@
       background: #0f0;
       color: #000;
     }
+    #hackMenu input {
+      width: 100%;
+      padding: 5px;
+      margin-top: 5px;
+      border: 1px solid #0f0;
+      border-radius: 5px;
+      background: #000;
+      color: #0f0;
+    }
     #hackIcon {
       position: fixed;
       top: 20px;
@@ -65,7 +74,7 @@
     <button onclick="toggleAutoJump()">🕹️ Bật Nhảy Tự Động</button>
     <button onclick="fireBullet()">🔫 Súng F</button>
     <button onclick="toggleFlyHack()">🦋 Bay bằng WASD</button>
-    <input type="number" id="pointInput" placeholder="Số điểm" />
+    <input type="number" id="pointInput" placeholder="Số điểm cần thêm" />
     <button onclick="addPoints()">➕ Thêm điểm</button>
   `;
   document.body.appendChild(menu);
@@ -141,8 +150,11 @@
 
   window.addPoints = function () {
     const points = parseInt(document.getElementById("pointInput").value, 10);
+    const r = Runner.instance_;
     if (!isNaN(points) && points > 0) {
-      Runner.instance_.distanceRan += points;
+      r.distanceRan += points;
+      r.distanceMeter.digits = ('' + Math.floor(r.distanceRan)).padStart(5, '0').split('');
+      r.distanceMeter.update(0, Math.floor(r.distanceRan));
     }
   };
 
@@ -215,34 +227,38 @@
   }
 
   window.toggleFlyHack = function () {
-    flyEnabled = !flyEnabled;
     if (flyEnabled) {
-      tRex.config.GRAVITY = 0;
-      document.addEventListener("keydown", keyHandler);
-      document.addEventListener("keyup", keyUpHandler);
-      document.addEventListener("keydown", preventJump);
-      flyLoop();
-    } else {
+      flyEnabled = false;
       tRex.config.GRAVITY = gravityBackup;
       cancelAnimationFrame(flyLoopID);
       document.removeEventListener("keydown", keyHandler);
       document.removeEventListener("keyup", keyUpHandler);
       document.removeEventListener("keydown", preventJump);
-      keyState = { w: false, s: false, a: false, d: false };
+    } else {
+      flyEnabled = true;
+      tRex.config.GRAVITY = 0;
+      document.addEventListener("keydown", keyHandler);
+      document.addEventListener("keyup", keyUpHandler);
+      document.addEventListener("keydown", preventJump);
+      flyLoop();
     }
   };
 
   function keyHandler(e) {
-    const key = e.key.toLowerCase();
-    if (key in keyState) keyState[key] = true;
+    if (e.key.toLowerCase() === "w") keyState.w = true;
+    if (e.key.toLowerCase() === "s") keyState.s = true;
+    if (e.key.toLowerCase() === "a") keyState.a = true;
+    if (e.key.toLowerCase() === "d") keyState.d = true;
   }
 
   function keyUpHandler(e) {
-    const key = e.key.toLowerCase();
-    if (key in keyState) keyState[key] = false;
+    if (e.key.toLowerCase() === "w") keyState.w = false;
+    if (e.key.toLowerCase() === "s") keyState.s = false;
+    if (e.key.toLowerCase() === "a") keyState.a = false;
+    if (e.key.toLowerCase() === "d") keyState.d = false;
   }
 
   function preventJump(e) {
-    if (e.code === "Space") e.preventDefault();
+    if (e.key === " ") e.preventDefault();
   }
 })();
